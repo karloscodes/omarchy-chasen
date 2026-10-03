@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "karloscodes.chasen",
+  "name": "Chasen",
+  "version": "1.0.0",
+  "author": "karloscodes",
+  "license": "Apache-2.0",
+  "description": "The alerts of your Chasen servers in the Omarchy bar. A click opens the screen of your servers.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Chasen.qml"
+  },
+  "barWidget": {
+    "displayName": "Chasen",
+    "description": "The alerts of your Chasen servers: an app that is down, a late backup, a full disk, SSH with passwords. A click opens the screen of your servers.",
+    "category": "System",
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "defaults": {
+      "refreshIntervalSec": 60
+    },
+    "schema": [
+      {
+        "key": "refreshIntervalSec",
+        "type": "integer",
+        "label": "Refresh interval (seconds)",
+        "min": 30,
+        "max": 3600,
+        "step": 30,
+        "defaultValue": 60
+      }
+    ]
+  }
+}
