@@ -5,9 +5,11 @@ import Quickshell.Io
 import qs.Commons
 import qs.Ui
 
-// Your Chasen servers in the bar. It runs `chasen overview --json`, which asks
-// every server you are logged in to and prints each one with its apps, their
-// state, the change that runs now, and the alerts of the server.
+// Your Chasen servers in the bar. It runs `chasen overview --watch` for as
+// long as the bar runs. That keeps one connection open to each server you are
+// logged in to, and prints a line of JSON once a minute, every 5 seconds while
+// a deploy runs, and when this asks with a line on its stdin: each server with
+// its apps, their state, the change that runs now, and the alerts.
 //
 // The icon turns while a deploy runs. It is urgent when an app is down or a
 // server has an error, normal with a warning, and dim when all is well. A
@@ -32,8 +34,10 @@ Panel {
   readonly property bool broken: down > 0 || errors > 0
   readonly property color barIconColor: broken ? urgent : (running > 0 || warnings > 0 ? barForeground : Qt.darker(barForeground, 1.55))
 
+  // Ask now: a line on the stdin of chasen, or a new chasen when it stopped.
   function refresh() {
-    if (!overview.running) overview.running = true
+    if (overview.running) overview.write("\n")
+    else overview.running = true
   }
 
   function read(text) {
@@ -72,24 +76,33 @@ Panel {
 
   Process {
     id: overview
-    running: false
-    command: ["chasen", "overview", "--json"]
-    stdout: StdioCollector { id: overviewOut; waitForEnd: true }
+    running: true
+    stdinEnabled: true
+    command: ["chasen", "overview", "--watch"]
+    stdout: SplitParser { onRead: function(line) { root.read(line) } }
     onExited: function(exitCode) {
       if (exitCode === 127) {
         root.problem = "Chasen is not installed: curl -fsSL https://chasenhq.com/cli | sh"
-        root.loaded = true
-        return
+      } else if (!root.loaded || root.problem !== "") {
+        root.problem = "chasen stopped. It needs 0.8.8 or newer: chasen update"
       }
-      root.read(overviewOut.text)
+      root.loaded = true
+      restart.start()
     }
   }
 
-  // Every 10 seconds while a deploy runs or the tree is open, else at the
-  // interval of the settings.
+  // A chasen that stopped starts again after a minute: after an update, or
+  // when it is installed at last.
   Timer {
-    interval: (root.running > 0 || root.opened ? 10 : Math.max(30, root.setting("refreshIntervalSec", 60))) * 1000
-    running: true
+    id: restart
+    interval: 60 * 1000
+    onTriggered: overview.running = true
+  }
+
+  // Every 10 seconds while the tree is open, and at once when it opens.
+  Timer {
+    interval: 10 * 1000
+    running: root.opened
     repeat: true
     triggeredOnStart: true
     onTriggered: root.refresh()

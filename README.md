@@ -9,14 +9,14 @@ Your [Chasen](https://chasenhq.com) servers in the Omarchy bar.
 ## What it needs
 
 - Omarchy Quattro, with its shell.
-- The `chasen` CLI, 0.8.6 or newer, logged in to at least one server. Each server needs `chasen-server` 0.8.6 or newer too; it updates itself each night, or run `chasen-server update` on it:
+- The `chasen` CLI, 0.8.8 or newer, logged in to at least one server. Each server needs `chasen-server` 0.8.6 or newer; it updates itself each night, or run `chasen-server update` on it:
 
 ```bash
 curl -fsSL https://chasenhq.com/cli | sh
 chasen add server root@203.0.113.5
 ```
 
-The widget runs `chasen overview --json`: every 10 seconds while a deploy runs or the tree is open, and once a minute otherwise. That asks each server that you are logged in to, through your SSH or over HTTPS, and prints one line of JSON. Nothing else runs, and the plugin writes no file.
+The widget runs one `chasen overview --watch` for as long as the bar runs. It keeps one connection open to each server that you are logged in to, through your SSH or over HTTPS, so it logs in once, not at each ask. It asks once a minute, every 5 seconds while a deploy runs, and every 10 seconds while the tree is open. Each ask is one call to a server: a `docker ps` and a read of its database. The alerts come at most once a minute. Nothing else runs, and the plugin writes no file.
 
 ## Install
 
@@ -25,8 +25,6 @@ omarchy plugin add https://github.com/karloscodes/omarchy-chasen.git --enable
 ```
 
 The icon goes to the right side of the bar. To move it, use _Setup > Plugins_ or `omarchy bar put karloscodes.chasen --before omarchy.clock`.
-
-To change how often it asks, set `refreshIntervalSec` (30 to 3600, 60 by default) on its entry in `~/.config/omarchy/shell.json`.
 
 ## Remove
 
